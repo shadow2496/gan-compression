@@ -26,9 +26,10 @@ class VideoForensicsDataset(BaseDataset):
         id_name = self.id_list[index]
         img_list = self.id_dict[id_name]
 
-        idx1 = np.random.randint(0, len(img_list) - 1)
+        interval = np.random.randint(1, 10)
+        idx1 = np.random.randint(0, len(img_list) - interval)
         img1 = Image.open(os.path.join(self.root, id_name, img_list[idx1]))
-        img2 = Image.open(os.path.join(self.root, id_name, img_list[idx1 + 1]))
+        img2 = Image.open(os.path.join(self.root, id_name, img_list[idx1 + interval]))
 
         # FIXME: crop 위치가 random이 아닌 것 같습니다
         # 두 이미지에 같은 random crop 적용
