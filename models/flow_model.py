@@ -48,7 +48,7 @@ class FlowModel(BaseModel):
         self.netF = init_net(self.netF, opt.gpu_ids)
 
         # define loss functions
-        self.criterionL1 = torch.nn.L1loss()
+        self.criterionL1 = torch.nn.L1Loss()
 
         # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
         self.optimizer = torch.optim.Adam(self.netF.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -73,7 +73,7 @@ class FlowModel(BaseModel):
 
     def forward(self):
         b = self.img1.size(0)
-        activations = self.modelG.netG[:14](torch.cat((self.img1, self.img2), 0)).detach()  # TODO: hyper-parameter tuning
+        activations = self.modelG.netG.model[:14](torch.cat((self.img1, self.img2), 0)).detach()  # TODO: hyper-parameter tuning
         self.real_diff = activations[b:] - activations[:b]
         self.fake_diff = self.netF(torch.cat((self.img1, self.img2), 1), 0)
 
@@ -100,14 +100,16 @@ class FlowModel(BaseModel):
             for i, data_i in enumerate(tqdm(self.eval_dataloader, desc='Eval       ', position=2, leave=False)):
                 self.set_input(data_i)
                 fake_diff = self.netF(torch.cat((self.img1, self.img2), 1), 0)
-                fake_im = self.modelG.netG[14:](self.modelG.netG[:14](self.img1) + fake_diff)
+                fake_im = self.modelG.netG.model[14:](self.modelG.netG.model[:14](self.img1) + fake_diff)
 
                 for j in range(len(self.image_paths)):
                     name = self.image_paths[j]
                     if cnt < 10:
-                        input_im = util.tensor2im(self.img2)
+                        input_im = util.tensor2im(self.img1)
+                        real_im = util.tensor2im(self.img2)
                         fake_im = util.tensor2im(fake_im)
                         util.save_image(input_im, os.path.join(save_dir, 'input', '%s.png' % name), create_dir=True)
+                        util.save_image(real_im, os.path.join(save_dir, 'real', '%s.png' % name), create_dir=True)
                         util.save_image(fake_im, os.path.join(save_dir, 'fake', '%s.png' % name), create_dir=True)
                     cnt += 1
 

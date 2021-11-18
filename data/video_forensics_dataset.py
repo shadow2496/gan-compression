@@ -33,7 +33,7 @@ class VideoForensicsDataset(BaseDataset):
 
         # FIXME: crop 위치가 random이 아닌 것 같습니다
         # 두 이미지에 같은 random crop 적용
-        if self.opt.is_train and np.random.rand(1)[0] < self.opt.crop_prob:
+        if self.opt.isTrain and np.random.rand(1)[0] < self.opt.crop_prob:
             h = img1.size[0]  # 모든 이미지는 이미 정사각형
             crop_scale_x = np.random.uniform(self.opt.crop_scale, 1)
             crop_scale_y = np.random.uniform(self.opt.crop_scale, 1)
@@ -46,7 +46,7 @@ class VideoForensicsDataset(BaseDataset):
         img1 = self.transform(img1)
         img2 = self.transform(img2)
 
-        return {'img1': img1, 'img2': img2, 'img_paths': id_name}
+        return {'img1': img1, 'img2': img2, 'img_paths': f'{id_name.split("/")[-1]}_{idx1:05d}_{interval}'}
 
     def __len__(self):
         return len(self.id_dict)  # train: 757

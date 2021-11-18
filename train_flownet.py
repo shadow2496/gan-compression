@@ -7,8 +7,7 @@ import time
 import numpy as np
 import torch
 from torch.backends import cudnn
-import tqdm
-from tqdm import trange
+from tqdm import tqdm, trange
 
 from data import create_dataloader
 from models import create_model
