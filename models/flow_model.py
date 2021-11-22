@@ -95,22 +95,20 @@ class FlowModel(BaseModel):
         os.makedirs(save_dir, exist_ok=True)
         self.netF.eval()
 
-        cnt = 0
         with torch.no_grad():
             for i, data_i in enumerate(tqdm(self.eval_dataloader, desc='Eval       ', position=2, leave=False)):
                 self.set_input(data_i)
+                real_im = self.modelG.netG.model(self.img2)
                 fake_diff = self.netF(torch.cat((self.img1, self.img2), 1), 0)
                 fake_im = self.modelG.netG.model[14:](self.modelG.netG.model[:14](self.img1) + fake_diff)
 
                 for j in range(len(self.image_paths)):
                     name = self.image_paths[j]
-                    if cnt < 10:
-                        input_im = util.tensor2im(self.img1)
-                        real_im = util.tensor2im(self.img2)
-                        fake_im = util.tensor2im(fake_im)
-                        util.save_image(input_im, os.path.join(save_dir, 'input', '%s.png' % name), create_dir=True)
-                        util.save_image(real_im, os.path.join(save_dir, 'real', '%s.png' % name), create_dir=True)
-                        util.save_image(fake_im, os.path.join(save_dir, 'fake', '%s.png' % name), create_dir=True)
-                    cnt += 1
+                    input_im = util.tensor2im(self.img1)
+                    real_im = util.tensor2im(real_im)
+                    fake_im = util.tensor2im(fake_im)
+                    util.save_image(input_im, os.path.join(save_dir, 'input', '%s.png' % name), create_dir=True)
+                    util.save_image(real_im, os.path.join(save_dir, 'real', '%s.png' % name), create_dir=True)
+                    util.save_image(fake_im, os.path.join(save_dir, 'fake', '%s.png' % name), create_dir=True)
 
         self.netF.train()
