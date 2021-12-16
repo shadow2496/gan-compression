@@ -1,8 +1,10 @@
 import os
 import pickle
 
+import cv2
 import numpy as np
 from PIL import Image
+import torch
 from torchvision import transforms
 
 from data.base_dataset import BaseDataset
@@ -31,6 +33,13 @@ class VideoForensicsDataset(BaseDataset):
         img1 = Image.open(os.path.join(self.root, id_name, img_list[idx1]))
         img2 = Image.open(os.path.join(self.root, id_name, img_list[idx1 + interval]))
 
+        img1_cv = cv2.imread(os.path.join(self.root, id_name, img_list[idx1]), cv2.IMREAD_GRAYSCALE)
+        img1_cv = cv2.resize(img1_cv, (self.opt.load_size // 4, self.opt.load_size // 4))
+        img2_cv = cv2.imread(os.path.join(self.root, id_name, img_list[idx1 + interval]), cv2.IMREAD_GRAYSCALE)
+        img2_cv = cv2.resize(img2_cv, (self.opt.load_size // 4, self.opt.load_size // 4))
+        flow = cv2.calcOpticalFlowFarneback(img2_cv, img1_cv, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        flow = torch.tensor(flow, dtype=torch.float)
+
         # FIXME: crop 위치가 random이 아닌 것 같습니다
         # 두 이미지에 같은 random crop 적용
         if self.opt.isTrain and np.random.rand(1)[0] < self.opt.crop_prob:
@@ -46,7 +55,7 @@ class VideoForensicsDataset(BaseDataset):
         img1 = self.transform(img1)
         img2 = self.transform(img2)
 
-        return {'img1': img1, 'img2': img2, 'img_paths': f'{id_name.split("/")[-1]}_{idx1:05d}_{interval}'}
+        return {'img1': img1, 'img2': img2, 'flow': flow, 'img_paths': f'{id_name.split("/")[-1]}_{idx1:05d}_{interval}'}
 
     def __len__(self):
         return len(self.id_dict)  # train: 757

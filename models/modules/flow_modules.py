@@ -10,7 +10,7 @@ class FlowBlock(nn.Module):
             nn.Conv2d(ngf, ngf, kernel_size=3, stride=2, padding=1), nn.ReLU(True), norm_layer(ngf),
             nn.Conv2d(ngf, ngf, kernel_size=3, stride=2, padding=1), nn.ReLU(True), norm_layer(ngf),
             nn.Conv2d(ngf, ngf, kernel_size=3, padding=1), nn.ReLU(True), norm_layer(ngf),
-            nn.Conv2d(ngf, ngf, kernel_size=3, padding=1)
+            nn.Conv2d(ngf, 2, kernel_size=3, padding=1)
         )
 
     def forward(self, x):

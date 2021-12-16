@@ -2,6 +2,7 @@ import copy
 import os
 
 import torch
+from torch.nn import functional as F
 from tqdm import tqdm
 
 from data import CustomDatasetDataLoader
@@ -40,7 +41,7 @@ class FlowModel(BaseModel):
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
         self.loss_names = ['l1']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
-        self.visual_names = ['img1', 'img2', 'fake_diff', 'real_diff']
+        self.visual_names = ['img1', 'img2', 'fake_flow', 'real_flow']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>.
         self.model_names = ['F']
 
@@ -69,18 +70,16 @@ class FlowModel(BaseModel):
     def set_input(self, input):
         self.img1 = input['img1'].to(self.device)
         self.img2 = input['img2'].to(self.device)
+        self.real_flow = input['flow'].to(self.device)
         self.image_paths = input['img_paths']
 
     def forward(self):
-        b = self.img1.size(0)
-        activations = self.modelG.netG.model[:14](torch.cat((self.img1, self.img2), 0)).detach()  # TODO: hyper-parameter tuning
-        self.real_diff = activations[b:] - activations[:b]
-        self.fake_diff = self.netF(torch.cat((self.img1, self.img2), 1), 0)
+        self.fake_flow = self.netF(torch.cat((self.img1, self.img2), 1), 0).permute(0, 2, 3, 1)
 
     def backward(self):
         lambda_l1 = self.opt.lambda_L1
 
-        self.loss_l1 = self.criterionL1(self.fake_diff, self.real_diff) * lambda_l1
+        self.loss_l1 = self.criterionL1(self.fake_flow, self.real_flow) * lambda_l1
         self.loss = self.loss_l1
         self.loss.backward()
 
@@ -96,11 +95,19 @@ class FlowModel(BaseModel):
         self.netF.eval()
 
         with torch.no_grad():
+            d = torch.linspace(-1, 1, self.opt.load_size // 4)
+            grid_y, grid_x = torch.meshgrid(d, d)
+            grid = torch.stack((grid_x, grid_y), 2).unsqueeze(0).to(self.device)
+
             for i, data_i in enumerate(tqdm(self.eval_dataloader, desc='Eval       ', position=2, leave=False)):
                 self.set_input(data_i)
                 real_im = self.modelG.netG.model(self.img2)
-                fake_diff = self.netF(torch.cat((self.img1, self.img2), 1), 0)
-                fake_im = self.modelG.netG.model[14:](self.modelG.netG.model[:14](self.img1) + fake_diff)
+
+                fake_flow = self.netF(torch.cat((self.img1, self.img2), 1), 0).permute(0, 2, 3, 1)
+                fake_flow_norm = fake_flow / ((self.opt.load_size // 4 - 1.0) / 2.0)
+                fake_im = self.modelG.netG.model[14:](
+                    F.grid_sample(self.modelG.netG.model[:14](self.img1), grid + fake_flow_norm, padding_mode='border')
+                )
 
                 for j in range(len(self.image_paths)):
                     name = self.image_paths[j]
