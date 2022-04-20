@@ -38,6 +38,7 @@ def get_opt():
 
     # model parameters
     parser.add_argument('--model', type=str, default='flow', help='choose which model to use')
+    parser.add_argument('--layer_idx', type=int, default=14)
 
     parser.add_argument('--restore_F_path', type=str, default=None,
                         help='the path to restore the generator F')
@@ -51,11 +52,15 @@ def get_opt():
                         help='if true, takes images in order to make batches, otherwise takes them randomly')
     parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
     parser.add_argument('--batch_size', type=int, default=4, help='input batch size')
+    parser.add_argument('--max_interval', type=int, default=10)
     parser.add_argument('--crop_prob', type=int, default=1, help='crop 적용될 확률')
-    parser.add_argument('--crop_scale', type=int, default=0.8, help='살아남는 이미지 최소 비율. 0.7이면 crop 후 0.7~1 이미지가 살아남음')
+    parser.add_argument('--crop_scale', type=float, default=0.8, help='살아남는 이미지 최소 비율. 0.7이면 crop 후 0.7~1 이미지가 살아남음')
+    parser.add_argument('--shake_scale', type=float, default=0.0, help='이미지 흔들림 정도. 0.5면 crop된 이전 프레임 이미지의 절반이 이동함')
     parser.add_argument('--load_size', type=int, default=512, help='scale images to this size')
     parser.add_argument('--preprocess', type=str, default='resize_and_crop',
                         help='scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none]')
+    parser.add_argument('--crop_separate', action='store_true')
+    parser.add_argument('--crop_more', action='store_true')
     parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
 
     # training parameters
@@ -71,6 +76,7 @@ def get_opt():
                         help='which counter to use for the scheduler')
 
     parser.add_argument('--lambda_L1', type=float, default=1.0)  # TODO: hyper-parameter tuning
+    parser.add_argument('--lambda_L1_out', type=float, default=1.0)  # TODO: hyper-parameter tuning
 
     # evaluation parameters
     parser.add_argument('--eval_batch_size', type=int, default=1, help='the evaluation batch size')
